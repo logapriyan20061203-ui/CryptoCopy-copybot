@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus, ShieldAlert, Users } from 'lucide-react';
+import { ArrowRight, Plus, Users } from 'lucide-react';
 import { traderService } from '../services/traderService';
 import { healthService } from '../services/healthService';
 import { useToast } from '../hooks/useToast';
@@ -58,7 +58,6 @@ const DashboardPage = () => {
   }, []);
 
   const services = health?.data?.services;
-  const safety = health?.data?.safety;
   const isHealthy = services?.api === 'operational' && services?.database === 'healthy';
   const healthUnavailable = health?.status === 'error' || !services;
   const healthLabel = loading ? 'Checking' : healthUnavailable ? 'Unavailable' : isHealthy ? 'Healthy' : 'Needs attention';
@@ -68,8 +67,6 @@ const DashboardPage = () => {
   const traderCount = traderSummary?.total ?? null;
   const activeCount = traderSummary?.active ?? null;
   const pausedCount = traderSummary?.paused ?? null;
-  const permittedModes = Array.isArray(safety?.supportedModes) ? safety.supportedModes : [];
-
   const displayCount = (value) => Number.isFinite(value) ? value.toLocaleString() : '—';
   const formatShortAddress = (address) => {
     if (!address) return 'Address unavailable';
@@ -93,58 +90,49 @@ const DashboardPage = () => {
     <div className="dashboard-page">
       <section className="dashboard-intro" aria-labelledby="dashboard-overview-title">
         <div>
-          <p className="dashboard-eyebrow">WORKSPACE OVERVIEW</p>
-          <h2 id="dashboard-overview-title">Current system state</h2>
-          <p className="dashboard-intro-copy">Monitoring, activity, and execution context in one place.</p>
+          <p className="dashboard-eyebrow">WORKSPACE</p>
+          <h2 id="dashboard-overview-title">Overview</h2>
+          <p className="dashboard-intro-copy">Read-only monitoring and copy activity.</p>
         </div>
         <Link to="/traders" className="dashboard-primary-action">
           <Plus size={16} aria-hidden="true" /> Add tracked trader
         </Link>
       </section>
 
-      <section className="dashboard-state-grid" aria-label="System and execution status">
-        <article className={`dashboard-state-panel ${healthUnavailable ? 'is-unavailable' : isHealthy ? 'is-healthy' : 'is-warning'}`}>
-          <div className="dashboard-panel-label">SYSTEM HEALTH</div>
-          <div className="dashboard-health-value">
-            <StatusDot status={healthUnavailable ? 'idle' : isHealthy ? 'active' : 'warning'} showLabel={false} pulse={false} />
-            <strong>{healthLabel}</strong>
+      <section className={`dashboard-current-state ${healthUnavailable ? 'is-unavailable' : isHealthy ? 'is-healthy' : 'is-warning'}`} aria-labelledby="dashboard-state-title" aria-live="polite">
+        <div className="dashboard-current-state-main">
+          <StatusDot status={healthUnavailable ? 'idle' : isHealthy ? 'active' : 'warning'} showLabel={false} pulse={false} />
+          <div>
+            <p className="dashboard-eyebrow">SYSTEM STATUS</p>
+            <h2 id="dashboard-state-title">{healthLabel}</h2>
+            <p className="dashboard-state-description">
+              {healthUnavailable ? 'System health could not be retrieved.' : isHealthy ? `API and database operational · Monitoring ${monitoringLabel.toLowerCase()}` : 'One or more core services need attention.'}
+            </p>
           </div>
-          <p>{healthUnavailable ? 'Health status could not be retrieved.' : isHealthy ? 'API and database are operational.' : 'One or more core services need attention.'}</p>
-          <details className="dashboard-detail-disclosure">
-            <summary>Service details</summary>
-            <dl>
-              <div><dt>API</dt><dd>{services?.api || 'Unavailable'}</dd></div>
-              <div><dt>Database</dt><dd>{services?.database || 'Unavailable'}</dd></div>
-              <div><dt>Monitoring</dt><dd>{monitoringLabel}</dd></div>
-              <div><dt>Testnet execution</dt><dd>{services?.testnetExecution?.replaceAll('_', ' ') || 'Unavailable'}</dd></div>
-              <div><dt>Mainnet execution</dt><dd>Blocked</dd></div>
-            </dl>
-          </details>
-          <Link to="/operations" className="dashboard-text-link">Open operations <ArrowRight size={14} aria-hidden="true" /></Link>
-        </article>
-
-        <article className="dashboard-state-panel dashboard-mode-panel">
-          <div className="dashboard-panel-label">PERMITTED EXECUTION MODES</div>
-          <div className="dashboard-mode-list">
-            {permittedModes.length > 0 ? permittedModes.map((mode) => (
-              <span key={mode} className="dashboard-mode-item">{mode}</span>
-            )) : <span className="dashboard-unavailable">Unavailable</span>}
-          </div>
-          <p>Mainnet execution is blocked by platform safety controls.</p>
-          <Link to="/execution" className="dashboard-text-link">Review execution settings <ArrowRight size={14} aria-hidden="true" /></Link>
-        </article>
+        </div>
+        {!healthUnavailable && !isHealthy && <Link to="/operations" className="dashboard-text-link">Review system status <ArrowRight size={14} aria-hidden="true" /></Link>}
+        <details className="dashboard-detail-disclosure">
+          <summary>Service details</summary>
+          <dl>
+            <div><dt>API</dt><dd>{services?.api || 'Unavailable'}</dd></div>
+            <div><dt>Database</dt><dd>{services?.database || 'Unavailable'}</dd></div>
+            <div><dt>Monitoring</dt><dd>{monitoringLabel}</dd></div>
+            <div><dt>Testnet execution</dt><dd>{services?.testnetExecution?.replaceAll('_', ' ') || 'Unavailable'}</dd></div>
+            <div><dt>Mainnet execution</dt><dd>Blocked</dd></div>
+          </dl>
+        </details>
       </section>
 
       <section className="dashboard-metrics" aria-label="Key metrics">
         <article className="dashboard-metric">
+          <div className="dashboard-metric-label">Active traders</div>
+          <strong>{loading ? <Skeleton height="30px" width="72px" /> : summaryUnavailable ? '—' : displayCount(activeCount)}</strong>
+          <span>{summaryUnavailable ? 'Count unavailable' : Number.isFinite(traderCount) ? `of ${displayCount(traderCount)} tracked` : 'Currently monitored'}</span>
+        </article>
+        <article className="dashboard-metric">
           <div className="dashboard-metric-label">Tracked traders</div>
           <strong>{loading ? <Skeleton height="30px" width="72px" /> : summaryUnavailable ? '—' : displayCount(traderCount)}</strong>
           <span>{summaryUnavailable ? 'Count unavailable' : Number.isFinite(pausedCount) ? `${displayCount(pausedCount)} paused` : 'Registered public wallets'}</span>
-        </article>
-        <article className="dashboard-metric">
-          <div className="dashboard-metric-label">Active monitors</div>
-          <strong>{loading ? <Skeleton height="30px" width="72px" /> : summaryUnavailable ? '—' : displayCount(activeCount)}</strong>
-          <span>{healthUnavailable ? 'Monitoring state unavailable' : `Engine ${monitoringLabel.toLowerCase()}`}</span>
         </article>
         <article className="dashboard-metric">
           <div className="dashboard-metric-label">Recorded events</div>
@@ -221,11 +209,6 @@ const DashboardPage = () => {
           <Link to="/traders" className="dashboard-text-link dashboard-traders-link">Manage traders <ArrowRight size={14} aria-hidden="true" /></Link>
         </div>
       </details>
-
-      <aside className="dashboard-safety-note">
-        <ShieldAlert size={17} aria-hidden="true" />
-        <p><strong>Read-only monitoring.</strong> The platform does not hold private keys; mainnet execution remains blocked.</p>
-      </aside>
 
       {selectedActivity && (
         <ActivityDetailsModal

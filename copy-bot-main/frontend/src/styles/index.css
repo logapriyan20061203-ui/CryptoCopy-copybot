@@ -3861,3 +3861,166 @@ table:not(.data-table) th {
     padding: 14px;
   }
 }
+
+/* Dashboard hierarchy */
+.dashboard-page {
+  gap: 23px;
+}
+
+.dashboard-intro {
+  align-items: center;
+  padding-bottom: 1px;
+}
+
+.dashboard-intro h2 {
+  font-size: 1.28rem;
+}
+
+.dashboard-eyebrow {
+  margin-bottom: 4px;
+}
+
+.dashboard-current-state {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px 24px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.dashboard-current-state-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.dashboard-current-state-main > .status-indicator {
+  width: 10px;
+  flex: 0 0 10px;
+}
+
+.dashboard-current-state.is-healthy .dashboard-current-state-main .status-dot {
+  color: var(--accent-emerald);
+}
+
+.dashboard-current-state.is-warning .dashboard-current-state-main .status-dot {
+  color: var(--accent-amber);
+}
+
+.dashboard-current-state.is-unavailable .dashboard-current-state-main .status-dot {
+  color: var(--text-muted);
+}
+
+.dashboard-current-state .dashboard-eyebrow {
+  margin-bottom: 2px;
+}
+
+.dashboard-current-state h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dashboard-state-description {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.dashboard-current-state > .dashboard-text-link {
+  justify-self: end;
+}
+
+.dashboard-current-state .dashboard-detail-disclosure {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.dashboard-current-state .dashboard-detail-disclosure summary {
+  padding-top: 9px;
+}
+
+.dashboard-metrics {
+  border: 0;
+  border-top: 1px solid var(--border-card);
+  border-bottom: 1px solid var(--border-card);
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-metric {
+  gap: 4px;
+  padding: 13px 17px 14px;
+}
+
+.dashboard-metric + .dashboard-metric {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.dashboard-metric-label {
+  font-size: 0.63rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dashboard-metric strong {
+  font-size: 1.3rem;
+}
+
+.dashboard-metric:first-child strong {
+  font-size: 1.46rem;
+}
+
+.dashboard-activity-section {
+  margin-top: 1px;
+}
+
+.dashboard-section-header {
+  margin-bottom: 11px;
+}
+
+.dashboard-traders-disclosure {
+  margin-top: 1px;
+}
+
+@media (max-width: 540px) {
+  .dashboard-page {
+    gap: 18px;
+  }
+
+  .dashboard-current-state {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding-top: 8px;
+  }
+
+  .dashboard-current-state > .dashboard-text-link {
+    justify-self: start;
+    margin-left: 23px;
+  }
+
+  .dashboard-current-state .dashboard-detail-disclosure {
+    grid-column: 1;
+  }
+
+  .dashboard-metric {
+    padding: 10px 13px;
+  }
+
+  .dashboard-metric strong,
+  .dashboard-metric:first-child strong {
+    font-size: 1.2rem;
+  }
+
+  .dashboard-metric + .dashboard-metric {
+    border-top: 1px solid var(--border-subtle);
+    border-left: 0;
+  }
+}
