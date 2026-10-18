@@ -4,7 +4,15 @@ const ApiResponse = require('../utils/apiResponse');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 const metricsService = require('../services/metricsService');
 
-const createLimiter = ({ windowMs, max, message, scope = 'ip', keyGenerator, skip }) => {
+const createLimiter = ({
+  windowMs,
+  max,
+  message,
+  scope = 'ip',
+  keyGenerator,
+  skip,
+  skipSuccessfulRequests = false
+}) => {
   return rateLimit({
     windowMs,
     max,
@@ -12,6 +20,7 @@ const createLimiter = ({ windowMs, max, message, scope = 'ip', keyGenerator, ski
     legacyHeaders: false,
     ...(keyGenerator ? { keyGenerator } : {}),
     ...(skip ? { skip } : {}),
+    ...(skipSuccessfulRequests ? { skipSuccessfulRequests: true } : {}),
     handler: (req, res) => {
       metricsService.increment('apiErrorsTotal');
       res.setHeader('X-RateLimit-Scope', scope);
@@ -61,12 +70,35 @@ const invalidBearerLimiter = createLimiter({
   scope: 'invalid-auth-ip'
 });
 
-// 2. Strict Authentication Limiter
+// 2. Authentication failures are limited separately from successful auth/session traffic.
 const authLimiter = createLimiter({
-  windowMs: 15 * 60 * 1000,
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
   max: env.AUTH_RATE_LIMIT_MAX,
-  message: 'Too many authentication attempts.',
-  scope: 'auth-ip'
+  message: 'Too many failed login attempts.',
+  scope: 'auth-ip',
+  skipSuccessfulRequests: true
+});
+
+const registrationLimiter = createLimiter({
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+  max: env.AUTH_RATE_LIMIT_MAX,
+  message: 'Too many registration attempts.',
+  scope: 'registration-ip'
+});
+
+const refreshLimiter = createLimiter({
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+  max: env.AUTH_RATE_LIMIT_MAX,
+  message: 'Too many session refresh attempts.',
+  scope: 'auth-refresh-ip',
+  skipSuccessfulRequests: true
+});
+
+const logoutLimiter = createLimiter({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX,
+  message: 'Too many logout requests.',
+  scope: 'auth-logout-ip'
 });
 
 // 3. Strict Execution Limiter
@@ -90,6 +122,9 @@ module.exports = {
   authenticatedApiLimiter,
   invalidBearerLimiter,
   authLimiter,
+  registrationLimiter,
+  refreshLimiter,
+  logoutLimiter,
   executionLimiter,
   dryRunLimiter
 };

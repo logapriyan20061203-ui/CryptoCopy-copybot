@@ -28,13 +28,18 @@ const LoginPage = () => {
       const result = await login(email, password);
       if (result?.success) {
         navigate(from, { replace: true });
-      } else if (result?.message?.trim().toLowerCase() === 'invalid email or password') {
-        setErrorMessage('Invalid email or password.');
       } else {
-        setErrorMessage('Unable to sign in. Please try again.');
+        setErrorMessage(
+          result?.message?.trim().toLowerCase() === 'invalid email or password'
+            ? 'Invalid email or password.'
+            : result?.message || 'Unable to sign in. Please try again.'
+        );
       }
-    } catch {
-      setErrorMessage('Unable to sign in. Please try again.');
+    } catch (err) {
+      setErrorMessage(
+        err.response?.data?.message
+        || (!err.response ? 'Unable to reach the server. Check your connection and try again.' : 'Unable to sign in. Please try again.')
+      );
     } finally {
       setIsSubmitting(false);
     }

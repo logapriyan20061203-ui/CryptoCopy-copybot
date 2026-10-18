@@ -16,6 +16,7 @@ const { runPhase7Tests } = require('./phase7-tests');
 const { runPhase8Tests } = require('./phase8-tests');
 const { runPhase9Tests } = require('./phase9-tests');
 const { runPhase10Tests } = require('./phase10-tests');
+const runAuthRateLimitTests = require('./auth-rate-limit-tests');
 const app = require('../src/app');
 
 let passedTests = 0;
@@ -245,6 +246,8 @@ const main = async () => {
 
   // --- PHASE 10 FINAL VALIDATION & CONTROLLED TESTNET OPERATIONS TESTS ---
   await runPhase10Tests(runTest);
+
+  await runTest('Authentication limits isolate refresh and count failed logins only', runAuthRateLimitTests);
 
   // --- HTTP SERVER INTEGRATION & IDOR TESTS ---
   const server = http.createServer(app);

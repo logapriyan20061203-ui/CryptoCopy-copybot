@@ -28,11 +28,15 @@ const getRateLimitScopes = (config, response) => {
   const path = getRequestPath(config);
   const method = (config.method || 'get').toLowerCase();
   const hasBearer = Boolean(config.headers?.Authorization || config.headers?.authorization);
+
+  if (path === '/api/v1/auth/login') return [path, 'auth-ip'];
+  if (path === '/api/v1/auth/register') return [path, 'registration-ip'];
+  if (path === '/api/v1/auth/refresh') return [path, 'auth-refresh-ip', 'auth-refresh'];
+  if (path === '/api/v1/auth/logout') return [path, 'auth-logout-ip'];
+  if (path === '/api/v1/health' || path.startsWith('/api/v1/health/')) return [path];
+
   const scopes = [path];
 
-  if (path === '/api/v1/health' || path.startsWith('/api/v1/health/')) return scopes;
-
-  if (path.startsWith('/api/v1/auth/')) scopes.push('auth-ip');
   if (path === '/api/v1/execution/config' && method === 'patch') scopes.push('execution-ip');
   if (path === '/api/v1/execution/dry-run') scopes.push('dry-run-ip');
 
@@ -75,6 +79,7 @@ const createCooldownError = (config, cooldown, scope) => {
 
 export const setAccessToken = (token) => {
   accessToken = token;
+  if (token) rateLimitCooldowns.delete('auth-refresh');
 };
 
 export const getAccessToken = () => accessToken;
@@ -83,9 +88,18 @@ export const getAccessToken = () => accessToken;
 api.interceptors.request.use(
   (config) => {
     const scopes = getRateLimitScopes(config);
-    const cooldownEntry = scopes
-      .map((scope) => [scope, rateLimitCooldowns.get(scope)])
-      .find(([, cooldown]) => cooldown);
+    const now = Date.now();
+    let cooldownEntry;
+    for (const scope of scopes) {
+      const cooldown = rateLimitCooldowns.get(scope);
+      if (!cooldown) continue;
+      if (cooldown.until <= now) {
+        rateLimitCooldowns.delete(scope);
+        continue;
+      }
+      cooldownEntry = [scope, cooldown];
+      break;
+    }
     const [scope, cooldown] = cooldownEntry || [];
     if (cooldown) {
       if (cooldown.until > Date.now()) {
@@ -141,10 +155,11 @@ api.interceptors.response.use(
     // Do not attempt refresh on auth endpoints (login, register, refresh itself)
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/auth/login') &&
-      !originalRequest.url.includes('/auth/register') &&
-      !originalRequest.url.includes('/auth/refresh')
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/register') &&
+      !originalRequest.url?.includes('/auth/refresh')
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -171,7 +186,7 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         processQueue(refreshErr, null);
         const refreshWasRateLimited = refreshErr.response?.status === 429 || refreshErr.isRateLimitCooldown;
-        if (refreshWasRateLimited && refreshErr.rateLimitScope === 'auth-ip' && refreshErr.retryAfterSeconds) {
+        if (refreshWasRateLimited && refreshErr.rateLimitScope === 'auth-refresh-ip' && refreshErr.retryAfterSeconds) {
           rateLimitCooldowns.set('auth-refresh', {
             until: Date.now() + refreshErr.retryAfterSeconds * 1000
           });

@@ -35,6 +35,7 @@ const env = {
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 mins
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100,
   AUTHENTICATED_API_RATE_LIMIT_MAX: parseInt(process.env.AUTHENTICATED_API_RATE_LIMIT_MAX, 10) || 300,
+  AUTH_RATE_LIMIT_WINDOW_MS: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 10) || 60 * 1000,
   AUTH_RATE_LIMIT_MAX: parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) || 15,
 
   // Phase 3 Blockchain RPC Providers

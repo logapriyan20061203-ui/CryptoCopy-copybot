@@ -13,6 +13,15 @@ const refreshSession = () => {
   return initialSessionRefresh;
 };
 
+const getAuthErrorMessage = (err, fallback) => {
+  if (err.response?.data?.message) return err.response.data.message;
+  if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+    return 'The request timed out. Please try again.';
+  }
+  if (!err.response) return 'Unable to reach the server. Check your connection and try again.';
+  return err.message || fallback;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +79,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: userData };
       }
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Login failed';
+      const message = getAuthErrorMessage(err, 'Login failed');
       const details = err.response?.data?.error?.details || [];
       setError(message);
       return { success: false, message, details };
@@ -88,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: userData };
       }
     } catch (err) {
-      const message = err.response?.data?.message || err.message || 'Registration failed';
+      const message = getAuthErrorMessage(err, 'Registration failed');
       const details = err.response?.data?.error?.details || [];
       setError(message);
       return { success: false, message, details };
